@@ -19,7 +19,7 @@ Attempt at a relatively low power "ambient climate sensor" project using MQTT.
 
 ## WiFi Credentials
 
-You will need to include your own wireless login header file (may not be the best way of doing it)
+You will need to include your own credential header files in the "src" directories of both stations. Only need the encryption key for the remote station.
 
 ### creds.h
 ```c
