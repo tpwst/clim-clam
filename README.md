@@ -25,7 +25,11 @@ You will need to include your own credential header files in the "src" directori
 
 ### creds.h
 ```c
-#include <ESP8266WiFi.h>
+#if defined(ESP8266)
+	#include <ESP8266WiFi.h>
+#elif defined(ESP32)
+	#include <WiFi.h>
+#endif
 
 const char* ssid = "your_ssid";
 const char* pass = "your_ssid_password";
