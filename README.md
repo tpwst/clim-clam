@@ -23,7 +23,7 @@ This is not optimized. This is less of a guide and more for my documentation. I'
 
 You will need to include your own credential header files in the "src" directories of both stations. Only need the encryption key for the remote station.
 
-### creds.h
+### base_station/src/creds.h
 ```c
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
@@ -35,6 +35,11 @@ const char* ssid = "your_ssid";
 const char* pass = "your_ssid_password";
 IPAddress server(ip,address,of,mqtt,server);
 
+// encryption key - must match for communicating devices
+uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+```
+### remote_station/src/creds.h
+```c
 // encryption key - must match for communicating devices
 uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 ```
