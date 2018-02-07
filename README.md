@@ -3,6 +3,8 @@
 Attempt at a relatively low power "ambient climate sensor" project using MQTT.
 
 ![prototyping][header]
+## Warning
+This is not optimized. This is less of a guide and more for my documentation. I'm sorry.
 
 ## Hardware
 
