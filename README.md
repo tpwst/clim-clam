@@ -63,6 +63,6 @@ uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x
 ![image of closed enclosure][img1]
 ![image of open enclosure][img2]
 
-[header]: https://github.com/tpwst/clim-clam/blob/master/img/radio_barl-01.png
+[header]: https://github.com/tpwst/clim-clam/blob/master/img/radio_barl-02.png
 [img1]: https://github.com/tpwst/clim-clam/blob/master/img/v1_01.jpg
 [img2]: https://github.com/tpwst/clim-clam/blob/master/img/v1_02.jpg
