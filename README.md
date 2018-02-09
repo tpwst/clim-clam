@@ -2,7 +2,7 @@
 
 Attempt at a relatively low power "ambient climate sensor" project using MQTT.
 
-![prototyping][header]
+![dumb "schematic"][header]
 ## Warning
 This is not optimized. This is less of a guide and more for my documentation. I'm sorry.
 
@@ -51,4 +51,10 @@ uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x
 * reduce power consumption
 * take updated pictures
 
+## Images
+![image of closed enclosure][img1]
+![image of open enclosure][img2]
+
 [header]: https://github.com/tpwst/clim-clam/blob/master/img/radio_barl-01.png
+[img1]: https://github.com/tpwst/clim-clam/blob/master/img/v1_01.jpg
+[img2]: https://github.com/tpwst/clim-clam/blob/master/img/v1_02.jpg

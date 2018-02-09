@@ -12,7 +12,8 @@
 #include <RTCZero.h>
 
 // select the display class to use, only one
-#include <GxGDEW0154Z04/GxGDEW0154Z04.cpp>  // 1.54" b/w/r
+// #include <GxGDEW0154Z04/GxGDEW0154Z04.cpp>  // 1.54" b/w/r
+#include <GxGDEP015OC1/GxGDEP015OC1.cpp> // 1.54" b/w
 
 #include <GxIO/GxIO_SPI/GxIO_SPI.cpp>
 #include <GxIO/GxIO.cpp>
@@ -294,7 +295,7 @@ void loop() {
   if (!bme.begin()) {
     char noSenErr[10] = "NO SENSOR";
     Serial.println("\n\nCouln't find BME280!\n");
-    display.fillRect(0,display.height()/2-18,display.width(),36,GxEPD_RED);
+    display.fillRect(0,display.height()/2-18,display.width(),36,GxEPD_BLACK);
     display.setCursor((display.width()/2) - (strlen(noSenErr)*12)/2,display.height()/2 - 8);
     display.setTextColor(GxEPD_WHITE);
     display.print(noSenErr);
