@@ -43,7 +43,8 @@ uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x
 // encryption key - must match for communicating devices
 uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 ```
-
+## Typeface
+**Input Mono** via [hundredrabbits](https://github.com/hundredrabbits)
 ## Wrench/Socket Sizes (for my sanity)
 | Part | Size |
 | - | - |
@@ -63,6 +64,6 @@ uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x
 ![image of closed enclosure][img1]
 ![image of open enclosure][img2]
 
-[header]: https://github.com/tpwst/clim-clam/blob/master/img/radio_barl-02.png
-[img1]: https://github.com/tpwst/clim-clam/blob/master/img/v1_01.jpg
-[img2]: https://github.com/tpwst/clim-clam/blob/master/img/v1_02.jpg
+[header]: img/radio_barl-02.png
+[img1]: img/v1_01.jpg
+[img2]: img/v1_02.jpg
