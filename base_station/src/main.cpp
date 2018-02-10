@@ -135,14 +135,6 @@ void do_ota() {
 
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
     Serial.println("Start updating " + type);
-    oled.clearDisplay();
-    oled.setTextSize(1);
-    oled.setCursor(2,0);
-    oled.print("OTA");
-    oled.setTextSize(2);
-    oled.setCursor(2,10);
-    oled.print("Updating " + type);
-    oled.display();
   });
   ArduinoOTA.onEnd([]() {
     Serial.println("\nEnd");
@@ -268,6 +260,14 @@ void loop() {
     if (rf69_manager.recvfromAck(buf, &len, &from)) {
       buf[len] = 0; // zero out remaining string
 
+      // set up vars for parsing
+      char msg_data_tempC[20] = "";
+      char msg_data_tempF[20] = "";
+      char msg_data_hum[20] = "";
+      char msg_data_pres[20] = "";
+      char msg_data_alt[20] = "";
+      char msg_data_bat[20] = "";
+
       Serial.print("Got packet from #"); Serial.print(from);
       Serial.print(" [RSSI :");
       Serial.print(rf69.lastRssi());
@@ -281,6 +281,9 @@ void loop() {
       int hours = timeClient.getHours();
       int minutes = timeClient.getMinutes();
       int seconds = timeClient.getSeconds();
+
+      //parse data from remote station
+      sscanf((char*)buf, "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%s",msg_data_tempC,msg_data_tempF,msg_data_hum,msg_data_pres,msg_data_alt,msg_data_bat);
 
       sprintf(mqtt_msg,"%d,%s",epoch,(char*)buf);
       Serial.println(mqtt_msg);
@@ -305,11 +308,15 @@ void loop() {
       oled.setTextSize(2);
       oled.printf("%02d:%02d",minutes,seconds);
 
-      oled.setCursor(w/2+16,6);
+      oled.setCursor(w/2+10,2);
       oled.setTextSize(1);
-      oled.print("DA.TA F");
-      oled.setCursor(w/2+16,16);
-      oled.print("BA.TT %");
+      oled.printf("BAT %s",msg_data_bat);
+      oled.print("%");
+      oled.setCursor(w/2+10,12);
+      oled.printf("%s F",msg_data_tempF);
+      oled.setCursor(w/2+10,22);
+      oled.printf("%s ",msg_data_hum);
+      oled.print("%");
       oled.display();
 
       // Send a reply back to the originator client

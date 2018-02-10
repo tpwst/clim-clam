@@ -55,10 +55,10 @@ uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x
 | Barrel jack | 7/16" |
 ## To do
 * more accurate battery monitoring
-* parse packet message and display relevant data
-* decide on "counter" direction
+* ~~parse packet message and display relevant data~~
 * reduce power consumption
-* take updated pictures
+* rework expected TX counter
+* debug switch (if low wait for serial monitor to run/set shorter sleep period)
 
 ## Images
 ![image of closed enclosure][img1]
