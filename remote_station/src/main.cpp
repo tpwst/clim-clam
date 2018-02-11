@@ -4,11 +4,13 @@
 #include <Arduino.h>
 #include <creds.h>
 #include <SPI.h>
+#include <Wire.h>
 #include <GxEPD.h>
 #include <RH_RF69.h>
 #include <RHReliableDatagram.h>
 #include <avr/dtostrf.h>
-#include <Adafruit_BME280.h>
+// #include <Adafruit_BME280.h>
+#include <SparkFunBME280.h>
 #include <RTCZero.h>
 
 // select the display class to use, only one
@@ -26,6 +28,8 @@
 #define RFM69_RST 4
 #define LED 13
 #define VBATPIN A7
+#define sleep_pin A2 // logic for sleep duration
+#define wait_for_serial_pin A1 // logic for debug - serial monitor
 
 // #define BME_CS 10 // chip select pin for BME280 (SPI)
 
@@ -48,7 +52,8 @@ GxIO_Class io(SPI,CS,DC,RST);
 GxEPD_Class display(io, RST, BUSY); // arbitrary selection of (16), 4
 
 // Adafruit_BME280 bme(BME_CS,MOSI,MISO,SCK); // hardware SPI
-Adafruit_BME280 bme; // hardware I2C
+// Adafruit_BME280 bme; // hardware I2C
+BME280 bme; //sparkfun bme obj
 
 // create rtc obj
 RTCZero rtc;
@@ -61,7 +66,6 @@ RHReliableDatagram rf69_manager(rf69, MY_ADDRESS);
 const byte sec = 0;
 const byte min = 00;
 const byte hrs = 00;
-const char sleep[] = "15 min";
 
 // type grid
 const int margin = 12;
@@ -94,7 +98,9 @@ void Blink(byte PIN, byte DELAY_MS, byte loops) {
 
 void setup() {
   Serial.begin(115200);
-  // while (!Serial) { delay(1); } // wait until serial console is open, remove if not tethered to computer
+  if (digitalRead(wait_for_serial_pin) == LOW) {
+    while (!Serial) { delay(1); } // wait until serial console is open, remove if not tethered to computer
+  }
 
   Serial.println("\n<< UP >>\n");
 
@@ -102,6 +108,8 @@ void setup() {
   digitalWrite(RST,LOW);
   pinMode(LED,OUTPUT);
   digitalWrite(LED,LOW);
+
+  pinMode(sleep_pin,INPUT);
 
   // manual reset
   digitalWrite(RFM69_RST, HIGH);
@@ -111,19 +119,41 @@ void setup() {
 
   rtc.begin();
   rtc.setTime(hrs,min,sec);
-  rtc.setAlarmTime(0,15,00);  // 30 sec alarm (sleep period maybe?)
+  if (digitalRead(sleep_pin) == HIGH) {
+    rtc.setAlarmTime(0,15,00);  // 15 min
+    Serial.println("Sleep: 15 min");
+  } else {
+    rtc.setAlarmTime(0,00,10);  // 10 sec
+    Serial.println("Sleep: 10 sec");
+  }
+
   rtc.enableAlarm(rtc.MATCH_MMSS);
 
   rtc.attachInterrupt(alarmMatch);
-
-  delay(10);  // delay to let bme init
 
   display.init();
   display.setTextSize(2);
   display.setTextColor(GxEPD_BLACK);
   display.setRotation(2);
 
-  Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
+  // Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
+  bme.settings.commInterface = I2C_MODE;
+  bme.settings.I2CAddress = 0x77;
+
+  //  0, Sleep mode
+	//  1 or 2, Forced mode
+	//  3, Normal mode
+  bme.settings.runMode = 2;
+  bme.settings.tStandby = 0;
+  bme.settings.filter = 0; // filter off
+
+  bme.settings.tempOverSample = 1; // 0 = skipped
+  bme.settings.pressOverSample = 1; // 0 = skipped
+  bme.settings.humidOverSample = 1; // 0 = skipped
+
+  Serial.print("BME280 INIT... ");
+  delay(10);  // delay to let bme init
+  Serial.println(bme.begin(), HEX);
 
   delay(100);
 
@@ -148,9 +178,9 @@ void setup() {
 
   Serial.print("RFM69 radio @"); Serial.print((int)RF69_FREQ); Serial.println(" MHz");
 
-  if (!bme.begin()) {
-    Serial.println("\n\nCouln't find BME280!\n");
-  }
+  // if (!bme.begin()) {
+  //   Serial.println("\n\nCouln't find BME280!\n");
+  // }
 }
 
 // Dont put this on the stack:
@@ -158,7 +188,7 @@ uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
 uint8_t data[] = "  OK";
 
 void loop() {
-  delay(100);
+  bme.begin();
 
   char record[40] = ""; // set record to empty for next loop job
 
@@ -177,11 +207,14 @@ void loop() {
   float volt_bat = bat*3.3; // mult by 3.3 the reference voltage
   volt_bat /= 1024; // convert to voltage
 
-  msg_data[0] = bme.readTemperature();
-  msg_data[1] = msg_data[0] * 9.0 / 5.0 + 32;
-  msg_data[2] = bme.readHumidity();
-  msg_data[3] = bme.readPressure()/100.00F;
-  msg_data[4] = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  msg_data[0] = bme.readTempC();
+  // msg_data[1] = msg_data[0] * 9.0 / 5.0 + 32;
+  msg_data[1] = bme.readTempF();
+  msg_data[2] = bme.readFloatHumidity();
+  // msg_data[3] = bme.readPressure()/100.00F;
+  msg_data[3] = bme.readFloatPressure()/100.00F;
+  // msg_data[4] = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  msg_data[4] = bme.readFloatAltitudeMeters();
   // msg_data[5] = percent_bat;
 
   Serial.println(msg_data[0]);
@@ -289,7 +322,11 @@ void loop() {
   // draw deep duration
   display.setTextColor(GxEPD_WHITE);
   display.setCursor(barMargin,display.height()-16);
-  display.print(sleep);
+  if (digitalRead(sleep_pin) == HIGH) {
+    display.print("15 min");
+  } else {
+    display.print("10 sec");
+  }
 
   // display error alert if bme280 not found
   if (!bme.begin()) {
@@ -301,6 +338,9 @@ void loop() {
     display.print(noSenErr);
     // display.update();
   }
+
+  bme.writeRegister(BME280_CTRL_MEAS_REG, 0x00); //sleep the BME
+  rf69.sleep(); // sleep transmitter
 
   Serial.print("\nE-PAPER\n");
   display.update();

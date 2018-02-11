@@ -38,14 +38,30 @@ IPAddress server(ip,address,of,mqtt,server);
 // encryption key - must match for communicating devices
 uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 ```
+
 ### remote_station/src/creds.h
 ```c
 // encryption key - must match for communicating devices
 uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 ```
-## Typeface
-**Input Mono** via [hundredrabbits](https://github.com/hundredrabbits)
-## Wrench/Socket Sizes (for my sanity)
+
+## Notes
+### Power
+This is with sleeping the controller, sensor and transmitter.
+
+| Period | Current Draw | Duration |
+| - | - | - |
+| during code execution | ~15mA | 1.2 sec |
+| during sleep | ~ 610uA | 15 min |
+
+With a 1200mAh battery will potentially run for 78 days.
+
+### Dev DIP Switches
+1 - OFF = runs normal, ON = runs only when serial monitor is running
+
+2 - OFF = sleeps for 15 min, ON = sleeps for 10 sec. 
+
+### Wrench/Socket Sizes (for my sanity)
 | Part | Size |
 | - | - |
 | Antenna | 5/16" |
@@ -53,14 +69,15 @@ uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x
 | Momentary reset switch | 10mm |
 | Toggle switch | 10mm |
 | Barrel jack | 7/16" |
-## To do
+
+### To do
 * more accurate battery monitoring
 * ~~parse packet message and display relevant data~~
 * reduce power consumption
 * rework expected TX counter
 * debug switch (if low wait for serial monitor to run/set shorter sleep period)
 
-## Images
+### Images
 ![image of closed enclosure][img1]
 ![image of open enclosure][img2]
 
