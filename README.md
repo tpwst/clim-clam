@@ -82,9 +82,13 @@ With a 1200mAh battery will potentially run for 78 days.
 * ~~debug switch (if low wait for serial monitor to run/set shorter sleep period)~~
 
 ### Images
-![image of closed enclosure][img1]
-![image of open enclosure][img2]
+![closed enclosure][img1]
+![open enclosure][img2]
+![external enclosure ports][img3]
+![base station mounted on wall displaying data from remote station][img4]
 
 [header]: img/radio_barl-02.png
 [img1]: img/v1_01.jpg
-[img2]: img/v1_02.jpg
+[img2]: img/rs_01.png
+[img3]: img/rs_02.png
+[img4]: img/bs_01.png
