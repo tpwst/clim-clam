@@ -9,7 +9,7 @@ This is not optimized. This is less of a guide and more for my documentation. I'
 ## Hardware
 
 ### Base Station
-* [Adafruit HUZZAH32 ESP32 Feather Board](https://www.adafruit.com/product/3405)
+* [Adafruit HUZZAH32 ESP32 Feather Board](https://www.adafruit.com/product/3405) or [Adafruit Feather HUZZAH with ESP8266 WiFi](https://www.adafruit.com/product/2821)
 * [FeatherWing OLED - 128x32 OLED](https://www.adafruit.com/product/2900)
 * [Adafruit Radio FeatherWing - RFM69HCW 900MHz - RadioFruit](https://www.adafruit.com/product/3229)
 * [FeatherWing Tripler](https://www.adafruit.com/product/3417)
