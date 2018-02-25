@@ -45,6 +45,9 @@ NTPClient timeClient(ntpUDP);
 
 RTC_Millis rtc;
 
+DateTime sleepDur;
+bool TXcheck = 0;
+
 const int wait = 200;
 char mqtt_msg[100];
 
@@ -229,8 +232,8 @@ void setup()
 
   delay(1000);
   oled.clearDisplay();
-  oled.setTextSize(1);
-  oled.setCursor(2,0);
+  oled.setTextSize(2);
+  oled.setCursor(10,10);
   oled.print("STBY");
   oled.display();
 
@@ -267,6 +270,7 @@ void loop() {
       char msg_data_pres[20] = "";
       char msg_data_alt[20] = "";
       char msg_data_bat[20] = "";
+      char msg_data_slp[10] = "";
 
       Serial.print("Got packet from #"); Serial.print(from);
       Serial.print(" [RSSI :");
@@ -283,7 +287,7 @@ void loop() {
       int seconds = timeClient.getSeconds();
 
       //parse data from remote station
-      sscanf((char*)buf, "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%s",msg_data_tempC,msg_data_tempF,msg_data_hum,msg_data_pres,msg_data_alt,msg_data_bat);
+      sscanf((char*)buf, "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%s",msg_data_tempC,msg_data_tempF,msg_data_hum,msg_data_pres,msg_data_alt,msg_data_bat,msg_data_slp);
 
       sprintf(mqtt_msg,"%d,%s",epoch,(char*)buf);
       Serial.println(mqtt_msg);
@@ -294,7 +298,11 @@ void loop() {
       // I don't know...
       delay(1);
 
-      rtc.adjust(DateTime(2014, 1, 21, 0, 0, 0));
+      // rtc.adjust(DateTime(2014, 1, 21, 0, 0, 0));
+      rtc.adjust(DateTime(epoch));
+      int slpInt;
+      sscanf(msg_data_slp,"%d",&slpInt);
+      sleepDur = epoch + slpInt;
 
       oled.clearDisplay();
       oled.setTextSize(1);
@@ -322,17 +330,30 @@ void loop() {
       // Send a reply back to the originator client
       if (!rf69_manager.sendtoWait(data, sizeof(data), from))
         Serial.println("Sending failed (no ack)");
+
+      TXcheck = 1;
     }
   }
 
-  // count since last packet transmission
-  // swap out for countdown?
-  DateTime now = rtc.now();
+  // check to see if there's been contact with the remote station
+  if (TXcheck) {
+    // count since last packet transmission
+    // swap out for countdown?
+    TimeSpan countDown = sleepDur - rtc.now();
 
-  oled.fillRect(0,12,w/2,h,BLACK);
-  oled.setTextSize(2);
-  oled.setCursor(2,14);
-  oled.printf("%02u:%02u",now.minute(),now.second());
+    if (countDown.seconds() < 0 && countDown.minutes() == 0) {
+      oled.fillRect(0,12,w/2,h,BLACK);
+      oled.setTextSize(2);
+      oled.setCursor(2,14);
+      oled.print("LATE!");
+    } else {
+      oled.fillRect(0,12,w/2,h,BLACK);
+      oled.setTextSize(2);
+      oled.setCursor(2,14);
+      oled.printf("%02u:%02u",countDown.minutes(),countDown.seconds());
+    }
+  }
+
   oled.display();
 
 }

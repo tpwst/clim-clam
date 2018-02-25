@@ -80,6 +80,8 @@ char radiopacket[80];
 char str_temp[80]; // temp string for dtostrf
 char bat_temp[10]; // temp string for dtostrf
 
+int sleepDur;
+
 //bools for radio results
 bool radio_init, radio_freq, radio_reply, radio_ack;
 
@@ -122,9 +124,11 @@ void setup() {
   if (digitalRead(sleep_pin) == HIGH) {
     rtc.setAlarmTime(0,15,00);  // 15 min
     Serial.println("Sleep: 15 min");
+    sleepDur = 900;
   } else {
     rtc.setAlarmTime(0,00,10);  // 10 sec
     Serial.println("Sleep: 10 sec");
+    sleepDur = 10;
   }
 
   rtc.enableAlarm(rtc.MATCH_MMSS);
@@ -233,7 +237,7 @@ void loop() {
       strcat(record,delim);
     }
     Serial.println(record);
-    sprintf(radiopacket,"%s,%d",record,(int)percent_bat);
+    sprintf(radiopacket,"%s,%d,%d",record,(int)percent_bat,sleepDur);
   }
 
   // char radiopacket[20] = "Hello World #";

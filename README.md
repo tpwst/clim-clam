@@ -78,7 +78,7 @@ With a 1200mAh battery will potentially run for 78 days.
 * more accurate battery monitoring
 * ~~parse packet message and display relevant data~~
 * reduce power consumption
-* rework expected TX counter
+* ~~rework expected TX counter~~
 * ~~debug switch (if low wait for serial monitor to run/set shorter sleep period)~~
 
 ### Images
