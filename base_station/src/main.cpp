@@ -172,6 +172,8 @@ void setup()
   Serial.begin(115200);
   // while (!Serial) { delay(1); } // wait until serial console is open, remove if not tethered to computer
 
+  delay(100);    // delay for oled init (have to reset to get it up...)
+
   oled.begin(SSD1306_SWITCHCAPVCC,0x3C);
   oled.setTextSize(1);
   oled.setTextColor(WHITE);
@@ -263,15 +265,6 @@ void loop() {
     if (rf69_manager.recvfromAck(buf, &len, &from)) {
       buf[len] = 0; // zero out remaining string
 
-      // set up vars for parsing
-      char msg_data_tempC[20] = "";
-      char msg_data_tempF[20] = "";
-      char msg_data_hum[20] = "";
-      char msg_data_pres[20] = "";
-      char msg_data_alt[20] = "";
-      char msg_data_bat[20] = "";
-      char msg_data_slp[10] = "";
-
       Serial.print("Got packet from #"); Serial.print(from);
       Serial.print(" [RSSI :");
       Serial.print(rf69.lastRssi());
@@ -286,46 +279,56 @@ void loop() {
       int minutes = timeClient.getMinutes();
       int seconds = timeClient.getSeconds();
 
-      //parse data from remote station
-      sscanf((char*)buf, "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%s",msg_data_tempC,msg_data_tempF,msg_data_hum,msg_data_pres,msg_data_alt,msg_data_bat,msg_data_slp);
+      if (from == 2) {                      // if from bme280
 
-      sprintf(mqtt_msg,"%d,%s",epoch,(char*)buf);
-      Serial.println(mqtt_msg);
+        // set up vars for parsing
+        char msg_data_tempC[20] = "";
+        char msg_data_tempF[20] = "";
+        char msg_data_hum[20] = "";
+        char msg_data_pres[20] = "";
+        char msg_data_alt[20] = "";
+        char msg_data_bat[20] = "";
+        char msg_data_slp[10] = "";
 
-      client.publish("BME280",mqtt_msg);
-      // the MQTT borker (yes, "borker") needs a delay here for some reason
-      // to be able to send published payloads to subbed clients
-      // I don't know...
-      delay(1);
+        //parse data from remote station
+        sscanf((char*)buf, "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%s",msg_data_tempC,msg_data_tempF,msg_data_hum,msg_data_pres,msg_data_alt,msg_data_bat,msg_data_slp);
 
-      // rtc.adjust(DateTime(2014, 1, 21, 0, 0, 0));
-      rtc.adjust(DateTime(epoch));
-      int slpInt;
-      sscanf(msg_data_slp,"%d",&slpInt);
-      sleepDur = epoch + slpInt;
+        sprintf(mqtt_msg,"%d,%s",epoch,(char*)buf);
+        Serial.println(mqtt_msg);
 
-      oled.clearDisplay();
-      oled.setTextSize(1);
-      oled.setCursor(2,2);
-      if (from == 2) {
+        client.publish("BME280",mqtt_msg);
+        // the MQTT borker (yes, "borker") needs a delay here for some reason
+        // to be able to send published payloads to subbed clients
+        // I don't know...
+        delay(1);
+
+        rtc.adjust(DateTime(epoch));
+        int slpInt;
+        sscanf(msg_data_slp,"%d",&slpInt);
+        sleepDur = epoch + slpInt;
+
+        oled.clearDisplay();
+        oled.setTextSize(1);
+        oled.setCursor(2,2);
         oled.print("> BME280");
+
+        oled.setCursor(2,16);
+        oled.setTextSize(2);
+        oled.printf("%02d:%02d",minutes,seconds);
+
+        oled.setCursor(w/2+10,2);
+        oled.setTextSize(1);
+        oled.printf("BAT %s",msg_data_bat);
+        oled.print("%");
+        oled.setCursor(w/2+10,12);
+        oled.printf("%s F",msg_data_tempF);
+        oled.setCursor(w/2+10,22);
+        oled.printf("%s ",msg_data_hum);
+        oled.print("%");
+        oled.display();
       } else {
         oled.print("LAST PKT:");
       }
-      oled.setCursor(2,16);
-      oled.setTextSize(2);
-      oled.printf("%02d:%02d",minutes,seconds);
-
-      oled.setCursor(w/2+10,2);
-      oled.setTextSize(1);
-      oled.printf("BAT %s",msg_data_bat);
-      oled.print("%");
-      oled.setCursor(w/2+10,12);
-      oled.printf("%s F",msg_data_tempF);
-      oled.setCursor(w/2+10,22);
-      oled.printf("%s ",msg_data_hum);
-      oled.print("%");
-      oled.display();
 
       // Send a reply back to the originator client
       if (!rf69_manager.sendtoWait(data, sizeof(data), from))
@@ -338,7 +341,6 @@ void loop() {
   // check to see if there's been contact with the remote station
   if (TXcheck) {
     // count since last packet transmission
-    // swap out for countdown?
     TimeSpan countDown = sleepDur - rtc.now();
 
     if (countDown.seconds() < 0 && countDown.minutes() == 0) {

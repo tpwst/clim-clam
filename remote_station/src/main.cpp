@@ -126,9 +126,9 @@ void setup() {
     Serial.println("Sleep: 15 min");
     sleepDur = 900;
   } else {
-    rtc.setAlarmTime(0,00,10);  // 10 sec
-    Serial.println("Sleep: 10 sec");
-    sleepDur = 10;
+    rtc.setAlarmTime(0,00,30);  // 30 sec
+    Serial.println("Sleep: 30 sec");
+    sleepDur = 30;
   }
 
   rtc.enableAlarm(rtc.MATCH_MMSS);
@@ -211,129 +211,145 @@ void loop() {
   float volt_bat = bat*3.3; // mult by 3.3 the reference voltage
   volt_bat /= 1024; // convert to voltage
 
-  msg_data[0] = bme.readTempC();
-  // msg_data[1] = msg_data[0] * 9.0 / 5.0 + 32;
-  msg_data[1] = bme.readTempF();
-  msg_data[2] = bme.readFloatHumidity();
-  // msg_data[3] = bme.readPressure()/100.00F;
-  msg_data[3] = bme.readFloatPressure()/100.00F;
-  // msg_data[4] = bme.readAltitude(SEALEVELPRESSURE_HPA);
-  msg_data[4] = bme.readFloatAltitudeMeters();
-  // msg_data[5] = percent_bat;
+  if (bme.begin()) {
 
-  Serial.println(msg_data[0]);
-  Serial.println(msg_data[1]);
-  Serial.println(msg_data[2]);
-  Serial.println(msg_data[3]);
-  Serial.println(msg_data[4]);
-  // Serial.println(msg_data[5]);
-  Serial.print("\n");
+    msg_data[0] = bme.readTempC();
+    // msg_data[1] = msg_data[0] * 9.0 / 5.0 + 32;
+    msg_data[1] = bme.readTempF();
+    msg_data[2] = bme.readFloatHumidity();
+    // msg_data[3] = bme.readPressure()/100.00F;
+    msg_data[3] = bme.readFloatPressure()/100.00F;
+    // msg_data[4] = bme.readAltitude(SEALEVELPRESSURE_HPA);
+    msg_data[4] = bme.readFloatAltitudeMeters();
+    // msg_data[5] = percent_bat;
 
-  // loop through bme_data indexes and format floats to strings
-  for(int i = 0; i < data_size; i++) {
-    dtostrf(msg_data[i],4,2,str_temp);
-    strcat(record,str_temp);
-    if(i<data_size-1) {
-      strcat(record,delim);
+    Serial.println(msg_data[0]);
+    Serial.println(msg_data[1]);
+    Serial.println(msg_data[2]);
+    Serial.println(msg_data[3]);
+    Serial.println(msg_data[4]);
+    // Serial.println(msg_data[5]);
+    Serial.print("\n");
+
+    // loop through bme_data indexes and format floats to strings
+    for(int i = 0; i < data_size; i++) {
+      dtostrf(msg_data[i],4,2,str_temp);
+      strcat(record,str_temp);
+      if(i<data_size-1) {
+        strcat(record,delim);
+      }
+      Serial.println(record);
+      sprintf(radiopacket,"%s,%d,%d",record,(int)percent_bat,sleepDur);
     }
-    Serial.println(record);
-    sprintf(radiopacket,"%s,%d,%d",record,(int)percent_bat,sleepDur);
-  }
 
-  // char radiopacket[20] = "Hello World #";
-  Serial.print("\nSending "); Serial.println(radiopacket);
+    // char radiopacket[20] = "Hello World #";
+    Serial.print("\nSending "); Serial.println(radiopacket);
 
-  // Send a message to the DESTINATION!
-  if (rf69_manager.sendtoWait((uint8_t *)radiopacket, strlen(radiopacket), DEST_ADDRESS)) {
-    // Now wait for a reply from the server
-    uint8_t len = sizeof(buf);
-    uint8_t from;
-    radio_ack = true;
-    if (rf69_manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
-      buf[len] = 0; // zero out remaining string
+    // Send a message to the DESTINATION!
+    if (rf69_manager.sendtoWait((uint8_t *)radiopacket, strlen(radiopacket), DEST_ADDRESS)) {
+      // Now wait for a reply from the server
+      uint8_t len = sizeof(buf);
+      uint8_t from;
+      radio_ack = true;
+      if (rf69_manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
+        buf[len] = 0; // zero out remaining string
 
-      Serial.print("Got reply from #"); Serial.print(from);
-      Serial.print(" [RSSI :");
-      Serial.print(rf69.lastRssi());
-      Serial.print("] : ");
-      Serial.println((char*)buf);
-      Blink(LED, 40, 3); //blink LED 3 times, 40ms between blinks
-      radio_reply = true;
+        Serial.print("Got reply from #"); Serial.print(from);
+        Serial.print(" [RSSI :");
+        Serial.print(rf69.lastRssi());
+        Serial.print("] : ");
+        Serial.println((char*)buf);
+        Blink(LED, 40, 3); //blink LED 3 times, 40ms between blinks
+        radio_reply = true;
+      } else {
+        Serial.println("No reply, is anyone listening?");
+        radio_reply = false;
+      }
     } else {
-      Serial.println("No reply, is anyone listening?");
-      radio_reply = false;
+      Serial.println("Sending failed (no ack)");
+      radio_ack = false;
     }
-  } else {
-    Serial.println("Sending failed (no ack)");
-    radio_ack = false;
-  }
 
-  // status bar
-  display.fillScreen(GxEPD_WHITE);
-  display.fillRect(0,0,display.width(),18,GxEPD_BLACK);
-  // draw gutter line
-  display.drawLine(58,0,58,display.height(),GxEPD_BLACK);
-  display.drawLine(59,0,59,display.height(),GxEPD_BLACK);
-  // draw battery icon
-  if (percent_bat>=100) {
-    display.fillRect(display.width()-(5*12),4,8,12,GxEPD_WHITE);
-    display.fillRect(display.width()-(5*12)+2,2,4,1,GxEPD_WHITE);
-  } else {
-    display.fillRect(display.width()-(4*12),4,8,12,GxEPD_WHITE);
-    display.fillRect(display.width()-(4*12)+2,2,4,1,GxEPD_WHITE);
-  }
-  // draw time
-  display.setTextColor(GxEPD_WHITE);
-  display.setCursor(barMargin,2);
-  display.print(analog_bat);
-  // draw battery %
-  if (percent_bat>=100) {
-    display.setCursor(display.width()-(4*12),2);
-  } else {
-    display.setCursor(display.width()-(3*12),2);
-  }
-  display.print((int)percent_bat);
-  display.println("%");
-  // draw temp C
-  display.setCursor(margin,top);
-  display.setTextColor(GxEPD_BLACK);
-  display.print("TMP  ");
-  display.print(msg_data[0]);
-  display.print(" C");
-  // draw temp F
-  display.setCursor(margin,top+20);
-  display.print("     ");
-  display.print(msg_data[1]);
-  display.print(" F");
-  // draw relHumidity
-  display.setCursor(margin,top+50);
-  display.print("HUM  ");
-  display.print(msg_data[2]);
-  display.print(" %");
-  // draw pressure
-  display.setCursor(margin,top+80);
-  display.print("PSR  ");
-  display.print(msg_data[3]);
-  display.print(" hPa");
-  // draw alt
-  display.setCursor(margin,top+110);
-  display.print("ALT  ");
-  display.print(msg_data[4]);
-  display.print(" m");
+    // status bar
+    display.fillScreen(GxEPD_WHITE);
+    display.fillRect(0,0,display.width(),18,GxEPD_BLACK);
+    // draw gutter line
+    display.drawLine(58,0,58,display.height(),GxEPD_BLACK);
+    display.drawLine(59,0,59,display.height(),GxEPD_BLACK);
+    // draw battery icon
+    if (percent_bat>=100) {
+      display.fillRect(display.width()-(5*12),4,8,12,GxEPD_WHITE);
+      display.fillRect(display.width()-(5*12)+2,2,4,1,GxEPD_WHITE);
+    } else {
+      display.fillRect(display.width()-(4*12),4,8,12,GxEPD_WHITE);
+      display.fillRect(display.width()-(4*12)+2,2,4,1,GxEPD_WHITE);
+    }
+    // draw deep duration
+    display.setTextColor(GxEPD_WHITE);
+    display.setCursor(barMargin,2);
+    if (digitalRead(sleep_pin) == HIGH) {
+      display.print("15 min");
+    } else {
+      display.print("30 sec");
+    }
+    // draw analog battery val DEV
+    display.setTextColor(GxEPD_WHITE);
+    display.setCursor(display.width()-100,2);
+    display.print(analog_bat);
+    // draw battery %
+    if (percent_bat>=100) {
+      display.setCursor(display.width()-(4*12),2);
+    } else {
+      display.setCursor(display.width()-(3*12),2);
+    }
+    display.setTextColor(GxEPD_WHITE);
+    display.print((int)percent_bat);
+    display.println("%");
+    // draw temp C
+    display.setCursor(margin,top);
+    display.setTextColor(GxEPD_BLACK);
+    display.print("TMP  ");
+    display.print(msg_data[0]);
+    display.print(" C");
+    // draw temp F
+    display.setCursor(margin,top+20);
+    display.print("     ");
+    display.print(msg_data[1]);
+    display.print(" F");
+    // draw relHumidity
+    display.setCursor(margin,top+50);
+    display.print("HUM  ");
+    display.print(msg_data[2]);
+    display.print(" %");
+    // draw pressure
+    display.setCursor(margin,top+80);
+    display.print("PSR  ");
+    display.print(msg_data[3]);
+    display.print(" mB");
+    // draw alt
+    display.setCursor(margin,top+110);
+    display.print("ALT  ");
+    display.print(msg_data[4]);
+    display.print(" m");
 
-  // bottom bar
-  display.fillRect(0,display.height()-18,display.width(),18,GxEPD_BLACK);
-  // draw deep duration
-  display.setTextColor(GxEPD_WHITE);
-  display.setCursor(barMargin,display.height()-16);
-  if (digitalRead(sleep_pin) == HIGH) {
-    display.print("15 min");
-  } else {
-    display.print("10 sec");
-  }
+    // bottom bar
+    display.fillRect(0,display.height()-18,display.width(),18,GxEPD_BLACK);
+
+    // display radio checks
+    display.setTextColor(GxEPD_WHITE);
+    display.setCursor(barMargin,display.height()-16);
+
+    if (!radio_ack) {               // if sending failed (no ack)
+      display.print("FAILED (NO ACK)");
+    } else if(!radio_reply) {       // if no reply
+      display.print("NO REPLY");
+    } else {                        // if good send
+      display.print("GOOD SEND: ");
+      display.print(rf69.lastRssi());
+    }
 
   // display error alert if bme280 not found
-  if (!bme.begin()) {
+  } else {
     char noSenErr[10] = "NO SENSOR";
     Serial.println("\n\nCouln't find BME280!\n");
     display.fillRect(0,display.height()/2-18,display.width(),36,GxEPD_BLACK);

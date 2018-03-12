@@ -63,7 +63,7 @@ With a 1200mAh battery will potentially run for 78 days.
 | 1 | ON | LOW | run when serial monitor is active |
 |  |  |  |  |
 | 2 | OFF | HIGH | sleep for 15 min |
-| 2 | ON | LOW | sleep for 10 sec |
+| 2 | ON | LOW | sleep for 30 sec |
 
 ### Wrench/Socket Sizes (for my sanity)
 | Part | Size |
@@ -79,7 +79,11 @@ With a 1200mAh battery will potentially run for 78 days.
 * ~~parse packet message and display relevant data~~
 * reduce power consumption
 * ~~rework expected TX counter~~
+* **Better yet, replace "countdown" with a log**
 * ~~debug switch (if low wait for serial monitor to run/set shorter sleep period)~~
+* LWT for failed connections
+* Adjust for multiple nodes
+* Sparkfun lib has trouble detecting failed bme init - when it fails it just hangs (no way to send further output...need to figure out work around)
 
 ### Images
 ![closed enclosure][img1]
