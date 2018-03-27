@@ -207,7 +207,7 @@ void loop() {
   float bat = analogRead(VBATPIN);
   bat *= 2; // mult by 2 since measurement is half
   int analog_bat = static_cast<int>(bat);
-  float percent_bat = map(analog_bat, 1160, 1322, 0, 100);
+  float percent_bat = map(analog_bat, 1118, 1322, 0, 100);
   float volt_bat = bat*3.3; // mult by 3.3 the reference voltage
   volt_bat /= 1024; // convert to voltage
 
@@ -356,7 +356,6 @@ void loop() {
     display.setCursor((display.width()/2) - (strlen(noSenErr)*12)/2,display.height()/2 - 8);
     display.setTextColor(GxEPD_WHITE);
     display.print(noSenErr);
-    // display.update();
   }
 
   bme.writeRegister(BME280_CTRL_MEAS_REG, 0x00); //sleep the BME

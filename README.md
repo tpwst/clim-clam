@@ -61,7 +61,6 @@ With a 1200mAh battery will potentially run for 78 days.
 | - | - | - | - |
 | 1 | OFF | HIGH | run on boot |
 | 1 | ON | LOW | run when serial monitor is active |
-|  |  |  |  |
 | 2 | OFF | HIGH | sleep for 15 min |
 | 2 | ON | LOW | sleep for 30 sec |
 
