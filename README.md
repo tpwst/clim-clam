@@ -85,6 +85,8 @@ With a 1200mAh battery will potentially run for 78 days.
 * Sparkfun lib has trouble detecting failed bme init - when it fails it just hangs (no way to send further output...need to figure out work around)
 
 ### Images
+#### (Don't look at the flux residue)
+
 ![closed enclosure][img1]
 ![open enclosure][img2]
 ![external enclosure ports][img3]

@@ -140,24 +140,44 @@ void setup() {
   display.setTextColor(GxEPD_BLACK);
   display.setRotation(2);
 
+  // Wire.begin();
+
+  // Serial.print("BME280 INIT... \n");
+  // delay(10);  // delay to let bme init
+  // Serial.println(bme.begin());
+
+  // ************************************ SPARKFUN BME SETTINGS ************************************
+
   // Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
-  bme.settings.commInterface = I2C_MODE;
-  bme.settings.I2CAddress = 0x77;
+  // bme.settings.commInterface = I2C_MODE;
+  // bme.settings.I2CAddress = 0x77;
 
   //  0, Sleep mode
 	//  1 or 2, Forced mode
 	//  3, Normal mode
-  bme.settings.runMode = 2;
-  bme.settings.tStandby = 0;
-  bme.settings.filter = 0; // filter off
+  // bme.settings.runMode = 2;
+  // bme.settings.tStandby = 0;
+  // bme.settings.filter = 0; // filter off
+  //
+  // bme.settings.tempOverSample = 1; // 0 = skipped
+  // bme.settings.pressOverSample = 1; // 0 = skipped
+  // bme.settings.humidOverSample = 1; // 0 = skipped
 
-  bme.settings.tempOverSample = 1; // 0 = skipped
-  bme.settings.pressOverSample = 1; // 0 = skipped
-  bme.settings.humidOverSample = 1; // 0 = skipped
+  // *********************************  END SPARKFUN BME SETTINGS **********************************
 
-  Serial.print("BME280 INIT... ");
-  delay(10);  // delay to let bme init
-  Serial.println(bme.begin(), HEX);
+  // ************************************ ADAFRUIT BME SETTINGS ************************************
+
+  // weather monitoring
+  // Serial.println("-- Weather Station Scenario --");
+  // Serial.println("forced mode, 1x temperature / 1x humidity / 1x pressure oversampling,");
+  // Serial.println("filter off");
+  // bme.setSampling(Adafruit_BME280::MODE_FORCED,
+  //                 Adafruit_BME280::SAMPLING_X1, // temperature
+  //                 Adafruit_BME280::SAMPLING_X1, // pressure
+  //                 Adafruit_BME280::SAMPLING_X1, // humidity
+  //                 Adafruit_BME280::FILTER_OFF   );
+
+  // *********************************  END ADAFRUIT BME SETTINGS **********************************
 
   delay(100);
 
@@ -192,7 +212,6 @@ uint8_t buf[RH_RF69_MAX_MESSAGE_LEN];
 uint8_t data[] = "  OK";
 
 void loop() {
-  bme.begin();
 
   char record[40] = ""; // set record to empty for next loop job
 
@@ -211,7 +230,40 @@ void loop() {
   float volt_bat = bat*3.3; // mult by 3.3 the reference voltage
   volt_bat /= 1024; // convert to voltage
 
-  if (bme.begin()) {
+  delay(10);
+  Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
+
+  if (!bme.begin()) { // display error alert if bme280 not found
+    char noSenErr[10] = "NO SENSOR";
+    Serial.println("\n\nCouln't find BME280!\n");
+    display.fillRect(0,display.height()/2-18,display.width(),36,GxEPD_BLACK);
+    display.setCursor((display.width()/2) - (strlen(noSenErr)*12)/2,display.height()/2 - 8);
+    display.setTextColor(GxEPD_WHITE);
+    display.print(noSenErr);
+    display.update();
+  } else {
+    delay(10);  // delay for bme to wake up?
+
+    // ************************************ SPARKFUN BME SETTINGS *********************************
+
+    Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
+    bme.settings.commInterface = I2C_MODE;
+    bme.settings.I2CAddress = 0x77;
+
+    //  0, Sleep mode
+  	//  1 or 2, Forced mode
+  	//  3, Normal mode
+    bme.settings.runMode = 2;
+    bme.settings.tStandby = 0;
+    bme.settings.filter = 0; // filter off
+
+    bme.settings.tempOverSample = 1; // 0 = skipped
+    bme.settings.pressOverSample = 1; // 0 = skipped
+    bme.settings.humidOverSample = 1; // 0 = skipped
+
+    // *********************************  END SPARKFUN BME SETTINGS *******************************
+
+    // bme.takeForcedMeasurement(); // only used with Adafruit_BME280
 
     msg_data[0] = bme.readTempC();
     // msg_data[1] = msg_data[0] * 9.0 / 5.0 + 32;
@@ -344,18 +396,9 @@ void loop() {
     } else if(!radio_reply) {       // if no reply
       display.print("NO REPLY");
     } else {                        // if good send
-      display.print("GOOD SEND: ");
+      display.print("RSSI: ");
       display.print(rf69.lastRssi());
     }
-
-  // display error alert if bme280 not found
-  } else {
-    char noSenErr[10] = "NO SENSOR";
-    Serial.println("\n\nCouln't find BME280!\n");
-    display.fillRect(0,display.height()/2-18,display.width(),36,GxEPD_BLACK);
-    display.setCursor((display.width()/2) - (strlen(noSenErr)*12)/2,display.height()/2 - 8);
-    display.setTextColor(GxEPD_WHITE);
-    display.print(noSenErr);
   }
 
   bme.writeRegister(BME280_CTRL_MEAS_REG, 0x00); //sleep the BME

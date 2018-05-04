@@ -6,6 +6,7 @@
 #include <RH_RF69.h>
 #include <RHReliableDatagram.h>
 #include <Adafruit_SSD1306.h>
+// #include "../lib/Adafruit_ILI9341/Adafruit_ILI9341.h"
 #include <PubSubClient.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -36,7 +37,8 @@ RH_RF69 rf69(RFM69_CS, RFM69_INT);
 // Class to manage message delivery and receipt, using the driver declared above
 RHReliableDatagram rf69_manager(rf69, MY_ADDRESS);
 
-Adafruit_SSD1306 oled = Adafruit_SSD1306();
+Adafruit_SSD1306 display = Adafruit_SSD1306();
+
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -71,8 +73,8 @@ void setup_wifi() {
   Serial.print("Connecting to ");
   Serial.print(ssid);
 
-  oled.print("WiFi...");
-  oled.display();
+  display.print("WiFi...");
+  display.display();
 
   WiFi.mode(WIFI_STA);
 
@@ -91,8 +93,8 @@ void setup_wifi() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  oled.print("CONNECTED");
-  oled.display();
+  display.print("CONNECTED");
+  display.display();
 
   delay(wait);
 }
@@ -105,22 +107,23 @@ void reconnect() {
     String clientId = "ESP32_Client-";
     clientId += String(random(0xffff), HEX);
 
-    oled.setCursor(0,12);
-    oled.print("MQTT...");
-    oled.display();
+    display.setTextSize(1);
+    display.setCursor(0,12);
+    display.print("MQTT...");
+    display.display();
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
 
-      oled.print("CONNECTED");
-      oled.display();
+      display.print("CONNECTED");
+      display.display();
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
 
-      oled.print("FAILED");
-      oled.display();
+      display.print("FAILED");
+      display.display();
 
       // Wait 5 seconds before retrying
       delay(5000);
@@ -144,14 +147,14 @@ void do_ota() {
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    oled.clearDisplay();
-    oled.setTextSize(1);
-    oled.setCursor(2,0);
-    oled.print("OTA");
-    oled.setTextSize(2);
-    oled.setCursor(2,14);
-    oled.printf("PROG: %u%%\r", (progress / (total / 100)));
-    oled.display();
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(2,0);
+    display.print("OTA");
+    display.setTextSize(2);
+    display.setCursor(2,14);
+    display.printf("PROG: %u%%\r", (progress / (total / 100)));
+    display.display();
   });
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
@@ -174,12 +177,12 @@ void setup()
 
   delay(100);    // delay for oled init (have to reset to get it up...)
 
-  oled.begin(SSD1306_SWITCHCAPVCC,0x3C);
-  oled.setTextSize(1);
-  oled.setTextColor(WHITE);
-  oled.clearDisplay();
-  oled.setCursor(0,0);
-  oled.display();
+  display.begin(SSD1306_SWITCHCAPVCC,0x3C);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.display();
 
   pinMode(LED, OUTPUT);
   digitalWrite(LED,LOW);
@@ -206,19 +209,19 @@ void setup()
   digitalWrite(RFM69_RST, LOW);
   delay(10);
 
-  oled.setCursor(0,24);
-  oled.print("Radio INIT...");
-  oled.display();
+  display.setCursor(0,24);
+  display.print("Radio INIT...");
+  display.display();
 
   if (!rf69_manager.init()) {
     Serial.println("RFM69 radio init failed");
-    oled.print("FAILED");
-    oled.display();
+    display.print("FAILED");
+    display.display();
     while (1);
   }
   Serial.println("RFM69 radio init OK!");
-  oled.print("SUCCESS");
-  oled.display();
+  display.print("SUCCESS");
+  display.display();
   // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM (for low power module)
   // No encryption
   if (!rf69.setFrequency(RF69_FREQ)) {
@@ -233,11 +236,11 @@ void setup()
   Serial.print("RFM69 radio @");  Serial.print((int)RF69_FREQ);  Serial.println(" MHz");
 
   delay(1000);
-  oled.clearDisplay();
-  oled.setTextSize(2);
-  oled.setCursor(10,10);
-  oled.print("STBY");
-  oled.display();
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(10,10);
+  display.print("STBY");
+  display.display();
 
   do_ota();
 }
@@ -297,7 +300,7 @@ void loop() {
         Serial.println(mqtt_msg);
 
         client.publish("BME280",mqtt_msg);
-        // the MQTT borker (yes, "borker") needs a delay here for some reason
+        // the MQTT borker (yes, "borker") needs a delay here
         // to be able to send published payloads to subbed clients
         // I don't know...
         delay(1);
@@ -307,55 +310,62 @@ void loop() {
         sscanf(msg_data_slp,"%d",&slpInt);
         sleepDur = epoch + slpInt;
 
-        oled.clearDisplay();
-        oled.setTextSize(1);
-        oled.setCursor(2,2);
-        oled.print("> BME280");
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setCursor(2,2);
+        display.print("RSSI ");
+        display.print(rf69.lastRssi());
 
-        oled.setCursor(2,16);
-        oled.setTextSize(2);
-        oled.printf("%02d:%02d",minutes,seconds);
+        display.setCursor(2,16);
+        display.setTextSize(2);
+        display.printf("%02d:%02d",hours - 4,minutes);
 
-        oled.setCursor(w/2+10,2);
-        oled.setTextSize(1);
-        oled.printf("BAT %s",msg_data_bat);
-        oled.print("%");
-        oled.setCursor(w/2+10,12);
-        oled.printf("%s F",msg_data_tempF);
-        oled.setCursor(w/2+10,22);
-        oled.printf("%s ",msg_data_hum);
-        oled.print("%");
-        oled.display();
+        display.setCursor(w/2+10,2);
+        display.setTextSize(1);
+        display.printf("BAT %s",msg_data_bat);
+        display.print("%");
+        display.setCursor(w/2+10,12);
+        display.printf("%s F",msg_data_tempF);
+        display.setCursor(w/2+10,22);
+        display.printf("%s ",msg_data_hum);
+        display.print("%");
+        display.display();
       } else {
-        oled.print("LAST PKT:");
+        display.print("LAST PKT:");
       }
 
       // Send a reply back to the originator client
       if (!rf69_manager.sendtoWait(data, sizeof(data), from))
         Serial.println("Sending failed (no ack)");
 
-      TXcheck = 1;
+      // TXcheck = 1;
     }
+  } else {
+    display.clearDisplay();
+    display.setCursor(10,10);
+    display.setTextSize(1);
+    display.print("rf69_manager fail");
+    display.display();
   }
 
-  // check to see if there's been contact with the remote station
-  if (TXcheck) {
-    // count since last packet transmission
-    TimeSpan countDown = sleepDur - rtc.now();
+  // // check to see if there's been contact with the remote station
+  // if (TXcheck) {
+  //   // count since last packet transmission
+  //   TimeSpan countDown = sleepDur - rtc.now();
+  //
+  //   if (countDown.seconds() < 0 && countDown.minutes() == 0) {
+  //     display.fillRect(0,12,w/2,h,BLACK);
+  //     display.setTextSize(2);
+  //     display.setCursor(2,14);
+  //     display.print("LATE!");
+  //   } else {
+  //     display.fillRect(0,12,w/2,h,BLACK);
+  //     display.setTextSize(2);
+  //     display.setCursor(2,14);
+  //     display.printf("%02u:%02u",countDown.minutes(),countDown.seconds());
+  //   }
+  // }
 
-    if (countDown.seconds() < 0 && countDown.minutes() == 0) {
-      oled.fillRect(0,12,w/2,h,BLACK);
-      oled.setTextSize(2);
-      oled.setCursor(2,14);
-      oled.print("LATE!");
-    } else {
-      oled.fillRect(0,12,w/2,h,BLACK);
-      oled.setTextSize(2);
-      oled.setCursor(2,14);
-      oled.printf("%02u:%02u",countDown.minutes(),countDown.seconds());
-    }
-  }
-
-  oled.display();
+  display.display();
 
 }
