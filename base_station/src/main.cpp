@@ -43,7 +43,9 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
 WiFiClient espClient;
 PubSubClient client(espClient);
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP);
+// NTPClient timeClient(ntpUDP);
+// NTPClient timeClient(obj,server pool, offset, update interval in ms);
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", -14400, 60000);
 
 RTC_Millis rtc;
 
@@ -149,10 +151,10 @@ void do_ota() {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     display.clearDisplay();
     display.setTextSize(1);
-    display.setCursor(2,0);
+    display.setCursor(2,2);
     display.print("OTA");
     display.setTextSize(2);
-    display.setCursor(2,14);
+    display.setCursor(2,16);
     display.printf("PROG: %u%%\r", (progress / (total / 100)));
     display.display();
   });
@@ -165,9 +167,7 @@ void do_ota() {
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
   });
   ArduinoOTA.begin();
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("<< OTA READY >>");
 }
 
 void setup()
@@ -192,7 +192,9 @@ void setup()
   rtc.begin(DateTime(2014, 1, 21, 0, 0, 0));
 
   setup_wifi();
+  delay(500);
   timeClient.begin();
+  delay(500);
   client.setServer(server, 1883);
 
   if (!client.connected()) {
@@ -200,6 +202,14 @@ void setup()
   }
 
   timeClient.update();
+
+  int epoch = timeClient.getEpochTime();
+  rtc.adjust(DateTime(epoch));
+  DateTime now = rtc.now();
+
+  int hours = now.hour();
+  int minutes = now.minute();
+  int seconds = now.second();
 
   Serial.println();
 
@@ -233,13 +243,17 @@ void setup()
   rf69.setTxPower(20, true);  // range from 14-20 for power, 2nd arg must be true for 69HCW
   rf69.setEncryptionKey(key);
 
-  Serial.print("RFM69 radio @");  Serial.print((int)RF69_FREQ);  Serial.println(" MHz");
+  Serial.print("RFM69 radio @");
+  Serial.print((int)RF69_FREQ);
+  Serial.println(" MHz");
 
-  delay(1000);
   display.clearDisplay();
-  display.setTextSize(2);
-  display.setCursor(10,10);
+  display.setTextSize(1);
+  display.setCursor(2,2);
   display.print("STBY");
+  display.setTextSize(2);
+  display.setCursor(2,16);
+  display.printf("%02d:%02d:%02d",hours,minutes,seconds);
   display.display();
 
   do_ota();
@@ -275,12 +289,13 @@ void loop() {
       Serial.println((char*)buf);
       Blink(LED, 40, 3); //blink LED 3 times, 40ms between blinks
 
-      timeClient.update();
+      // timeClient.update();
+      DateTime now = rtc.now();
 
-      int epoch = timeClient.getEpochTime();
-      int hours = timeClient.getHours();
-      int minutes = timeClient.getMinutes();
-      int seconds = timeClient.getSeconds();
+      int epoch = now.unixtime();
+      int hours = now.hour();
+      int minutes = now.minute();
+      int seconds = now.second();
 
       if (from == 2) {                      // if from bme280
 
@@ -304,8 +319,11 @@ void loop() {
         // to be able to send published payloads to subbed clients
         // I don't know...
         delay(1);
+        Serial.println("<< PUBBED >>");
 
-        rtc.adjust(DateTime(epoch));
+        // rtc.adjust(DateTime(epoch));
+
+        Serial.println("<< RTC ADJUST >>");
         int slpInt;
         sscanf(msg_data_slp,"%d",&slpInt);
         sleepDur = epoch + slpInt;
@@ -318,7 +336,13 @@ void loop() {
 
         display.setCursor(2,16);
         display.setTextSize(2);
-        display.printf("%02d:%02d",hours - 4,minutes);
+        //if (hours >= 0 && hours < 4) {
+        //    display.printf("%02d:%02d",hours + 20,minutes);
+        //} else {
+        //    display.printf("%02d:%02d",hours - 4,minutes);
+        //}
+
+        display.printf("%02d:%02d",hours,minutes);
 
         display.setCursor(w/2+10,2);
         display.setTextSize(1);
@@ -341,11 +365,11 @@ void loop() {
       // TXcheck = 1;
     }
   } else {
-    display.clearDisplay();
-    display.setCursor(10,10);
-    display.setTextSize(1);
-    display.print("rf69_manager fail");
-    display.display();
+    // display.clearDisplay();
+    // display.setCursor(10,10);
+    // display.setTextSize(1);
+    // display.print("rf69_manager fail");
+    // display.display();
   }
 
   // // check to see if there's been contact with the remote station
