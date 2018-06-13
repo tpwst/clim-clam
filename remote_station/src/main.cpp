@@ -1,6 +1,13 @@
-// REMOTE CONTROLLER
-// SENDS DATA FROM ATTACHED BME280 TO RECEIVING BASE STATION
-// THAT THEN SENDS DATA VIA MQTT TO A SERVER
+/***************************************************************************************************
+  CLIM-CLAM (REMOTE STATION)
+
+  SENDS DATA FROM ATTACHED BME280 TO RECEIVING BASE STATION
+  THAT THEN SENDS DATA VIA MQTT TO A SERVER
+
+  AUTHOR: tpwst
+  EMAIL: tpw@cqfl.org
+***************************************************************************************************/
+
 #include <Arduino.h>
 #include <creds.h>
 #include <SPI.h>
@@ -12,6 +19,10 @@
 // #include <Adafruit_BME280.h>
 #include <SparkFunBME280.h>
 #include <RTCZero.h>
+
+// include SD lib for troubleshooting
+// not to be in final
+#include <SD.h>
 
 // select the display class to use, only one
 // #include <GxGDEW0154Z04/GxGDEW0154Z04.cpp>  // 1.54" b/w/r
@@ -31,8 +42,6 @@
 #define sleep_pin A2 // logic for sleep duration
 #define wait_for_serial_pin A1 // logic for debug - serial monitor
 
-// #define BME_CS 10 // chip select pin for BME280 (SPI)
-
 #define SEALEVELPRESSURE_HPA (1013.25) // For the altitude adjustment
 
 // Where to send packets to!
@@ -46,10 +55,9 @@ static const uint8_t RST = 11;
 static const uint8_t BUSY = 10;
 
 // GxIO_SPI(SPIClass& spi, int8_t cs, int8_t dc, int8_t rst = -1, int8_t bl = -1);
-// GxIO_Class io(SPI, SS, 17, 16); // arbitrary selection of 17, 16
 GxIO_Class io(SPI,CS,DC,RST);
 // GxGDEP015OC1(GxIO& io, uint8_t rst = D4, uint8_t busy = D2);
-GxEPD_Class display(io, RST, BUSY); // arbitrary selection of (16), 4
+GxEPD_Class display(io, RST, BUSY);
 
 // Adafruit_BME280 bme(BME_CS,MOSI,MISO,SCK); // hardware SPI
 // Adafruit_BME280 bme; // hardware I2C
@@ -246,7 +254,7 @@ void loop() {
 
     // ************************************ SPARKFUN BME SETTINGS *********************************
 
-    Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
+    // Serial.print("BME280 init = "); Serial.println(bme.begin(), HEX);
     bme.settings.commInterface = I2C_MODE;
     bme.settings.I2CAddress = 0x77;
 
@@ -303,7 +311,7 @@ void loop() {
       uint8_t len = sizeof(buf);
       uint8_t from;
       radio_ack = true;
-      if (rf69_manager.recvfromAckTimeout(buf, &len, 2000, &from)) {
+      if (rf69_manager.recvfromAckTimeout(buf, &len, 6000, &from)) {
         buf[len] = 0; // zero out remaining string
 
         Serial.print("Got reply from #"); Serial.print(from);

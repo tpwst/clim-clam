@@ -1,6 +1,13 @@
-// BASE CONTROLLER
-// RECEIVES DATA FROM REMOTE STATION
-// THEN SENDS DATA VIA MQTT TO A SERVER
+/***************************************************************************************************
+  CLIM-CLAM (BASE STATION/GATEWAY)
+
+  RECEIVES DATA FROM REMOTE STATION
+  THEN SENDS DATA VIA MQTT TO A SERVER
+
+  AUTHOR: tpwst
+  EMAIL: tpw@cqfl.org
+***************************************************************************************************/
+
 #include <Arduino.h>
 #include <creds.h>
 #include <RH_RF69.h>
@@ -194,7 +201,6 @@ void setup()
   setup_wifi();
   delay(500);
   timeClient.begin();
-  delay(500);
   client.setServer(server, 1883);
 
   if (!client.connected()) {
@@ -331,7 +337,7 @@ void loop() {
         display.clearDisplay();
         display.setTextSize(1);
         display.setCursor(2,2);
-        display.print("RSSI ");
+        display.print("RSSI: ");
         display.print(rf69.lastRssi());
 
         display.setCursor(2,16);
