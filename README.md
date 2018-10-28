@@ -18,7 +18,7 @@ This is not optimized. This is less of a guide and more for my documentation. I'
 * [Moteino M0](https://lowpowerlab.com/shop/product/184)
 * [SparkFun Atmospheric Sensor Breakout - BME280](https://www.sparkfun.com/products/13676)
 * [Waveshare 1.54in e-paper display (3 color - black + white)](https://www.amazon.com/gp/product/B0728BJTZC/ref=oh_aui_detailpage_o07_s00?ie=UTF8&psc=1)
-* [Lithium Ion Polymer Battery - 3.7v 2500mAh](Lithium Ion Polymer Battery - 3.7v 2500mAh)
+* [Lithium Ion Polymer Battery - 3.7v 2500mAh](https://www.adafruit.com/product/328)
 
 ## WiFi and RF Network Credentials
 
