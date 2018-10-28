@@ -1,6 +1,6 @@
 # Clim-Clam
 
-Attempt at a relatively low power "ambient climate sensor" project using MQTT.
+Attempt at a relatively low power "ambient climate sensor" project using Arduino.
 
 ![dumb "schematic"][header]
 ## Warning
@@ -8,22 +8,23 @@ This is not optimized. This is less of a guide and more for my documentation. I'
 
 ## Hardware
 
-### Base Station
-* [Adafruit HUZZAH32 ESP32 Feather Board](https://www.adafruit.com/product/3405) or [Adafruit Feather HUZZAH with ESP8266 WiFi](https://www.adafruit.com/product/2821)
+### Gateway
+* [Adafruit Feather HUZZAH with ESP8266 WiFi](https://www.adafruit.com/product/2821)
 * [FeatherWing OLED - 128x32 OLED](https://www.adafruit.com/product/2900)
 * [Adafruit Radio FeatherWing - RFM69HCW 900MHz - RadioFruit](https://www.adafruit.com/product/3229)
 * [FeatherWing Tripler](https://www.adafruit.com/product/3417)
 
-### Remote Station
-* [Adafruit Feather M0 RFM69HCW Packet Radio - 868 or 915 MHz - RadioFruit](https://www.adafruit.com/product/3176)
-* [Adafruit BME280 Temperature, Humidity and Pressure Sensor](https://www.adafruit.com/product/2652)
-* [Waveshare 1.54in e-paper display (3 color - black, white + red)](https://www.amazon.com/Waveshare-1-54inch-three-color-resolution-controller/dp/B074NYX1C4/ref=pd_sbs_229_2?_encoding=UTF8&pd_rd_i=B074NYX1C4&pd_rd_r=X46A33QDZVWT6SV47NG6&pd_rd_w=NKe6A&pd_rd_wg=cCjhA&psc=1&refRID=X46A33QDZVWT6SV47NG6)  
+### Weather Node
+* [Moteino M0](https://lowpowerlab.com/shop/product/184)
+* [SparkFun Atmospheric Sensor Breakout - BME280](https://www.sparkfun.com/products/13676)
+* [Waveshare 1.54in e-paper display (3 color - black + white)](https://www.amazon.com/gp/product/B0728BJTZC/ref=oh_aui_detailpage_o07_s00?ie=UTF8&psc=1)
+* [Lithium Ion Polymer Battery - 3.7v 2500mAh](Lithium Ion Polymer Battery - 3.7v 2500mAh)
 
-## WiFi Credentials
+## WiFi and RF Network Credentials
 
-You will need to include your own credential header files in the "src" directories of both stations. Only need the encryption key for the remote station.
+You will need to include your own credential header files in the "src" directories of both the gateway and the node. Only need the encryption key for the node.
 
-### base_station/src/creds.h
+### gateway/src/creds.h
 ```c
 #if defined(ESP8266)
   #include <ESP8266WiFi.h>
@@ -31,22 +32,23 @@ You will need to include your own credential header files in the "src" directori
   #include <WiFi.h>
 #endif
 
+// exactly the same 16 chars/bytes on all nodes
+#define ENCRYPTKEY "someKindOfString"
+
 const char* ssid = "your_ssid";
 const char* pass = "your_ssid_password";
 IPAddress server(ip,address,of,mqtt,server);
-
-// encryption key - must match for communicating devices
-uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 ```
 
-### remote_station/src/creds.h
+### node/src/creds.h
 ```c
-// encryption key - must match for communicating devices
-uint8_t key[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+// exactly the same 16 chars/bytes on all nodes
+#define ENCRYPTKEY "someKindOfString"
 ```
 
 ## Notes
 ### Power
+#### (I don't have the equipment to measure such low current so this is probably all bs and should be disregarded.)
 This is with sleeping the controller, sensor and transmitter.
 
 | Period | Current Draw | Duration |
@@ -57,12 +59,13 @@ This is with sleeping the controller, sensor and transmitter.
 With a 1200mAh battery will potentially run for 78 days.
 
 ### Dev DIP Switches
-| Switch | Position | Logic Lvl | Operation |
-| - | - | - | - |
-| 1 | OFF | HIGH | run on boot |
-| 1 | ON | LOW | run when serial monitor is active |
-| 2 | OFF | HIGH | sleep for 15 min |
-| 2 | ON | LOW | sleep for 30 sec |
+| Switch Position | Operation |
+| - | - |
+| U,D,D,D | wait for active serial monitor then run |
+| D,D,D,D | 15 minute sample rate |
+| D,U,D,D | 5 minute sample rate |
+| D,D,U,D | 1 minute sample rate |
+| D,U,U,D | 30 second sample rate|
 
 ### Wrench/Socket Sizes (for my sanity)
 | Part | Size |
@@ -84,6 +87,10 @@ With a 1200mAh battery will potentially run for 78 days.
 * Adjust for multiple nodes
 * Sparkfun lib has trouble detecting failed bme init - when it fails it just hangs (no way to send further output...need to figure out work around)
 
+### To remember
+
+* when programming/flashing the hex files to the m0, put it into bootloader mode (causes my machine to shutdown unexpectedly...)
+
 ### Images
 #### (Don't look at the flux residue)
 
@@ -91,9 +98,11 @@ With a 1200mAh battery will potentially run for 78 days.
 ![open enclosure][img2]
 ![external enclosure ports][img3]
 ![base station mounted on wall displaying data from remote station][img4]
+![clim-clam version 2][img5]
 
 [header]: img/radio_barl-02.png
 [img1]: img/v1_01.jpg
 [img2]: img/rs_01.png
 [img3]: img/rs_02.png
 [img4]: img/bs_01.png
+[img5]: img/v2_01.jpg
